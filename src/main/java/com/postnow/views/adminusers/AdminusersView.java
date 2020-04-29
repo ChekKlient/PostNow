@@ -1,8 +1,8 @@
 package com.postnow.views.adminusers;
 
+import com.postnow.backend.model.User;
+import com.postnow.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.postnow.backend.BackendService;
-import com.postnow.backend.Employee;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -14,7 +14,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
-import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.AfterNavigationEvent;
@@ -23,40 +22,41 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.postnow.views.postnow.PostNowView;
 
+// TODO admin panel
 @Route(value = "admin/users", layout = PostNowView.class)
 @PageTitle("Admin - users")
 @CssImport("styles/views/adminusers/adminusers-view.css")
 public class AdminusersView extends Div implements AfterNavigationObserver {
     @Autowired
-    private BackendService service;
+    private UserService userService;
 
-    private Grid<Employee> employees;
+    private Grid<User> users;
 
-    private TextField firstname = new TextField();
-    private TextField lastname = new TextField();
+//    private TextField firstname = new TextField();
+//    private TextField lastname = new TextField();
     private TextField email = new TextField();
-    private PasswordField password = new PasswordField();
+//    private TextField birthdate = new TextField();
+//    private TextField roles = new TextField();
 
-    private Button cancel = new Button("Cancel");
+    private Button delete = new Button("Delete");
     private Button save = new Button("Save");
 
-    private Binder<Employee> binder;
+    private Binder<User> binder;
 
     public AdminusersView() {
         setId("adminusers-view");
         // Configure Grid
-        employees = new Grid<>();
-        employees.addThemeVariants(GridVariant.LUMO_NO_BORDER);
-        employees.setHeightFull();
-        employees.addColumn(Employee::getFirstname).setHeader("First name");
-        employees.addColumn(Employee::getLastname).setHeader("Last name");
-        employees.addColumn(Employee::getEmail).setHeader("Email");
+        users = new Grid<>();
+        users.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        users.setHeightFull();
+        users.addColumn(User::getEmail).setHeader("Email");
+//        users.addColumn(User::getRoles).setHeader("Roles");
 
         //when a row is selected or deselected, populate form
-        employees.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
+        users.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
 
         // Configure Form
-        binder = new Binder<>(Employee.class);
+        binder = new Binder<>(User.class);
 
         // Bind fields. This where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
@@ -64,7 +64,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         // Employee
 
         // the grid valueChangeEvent will clear the form too
-        cancel.addClickListener(e -> employees.asSingleSelect().clear());
+        delete.addClickListener(e -> users.asSingleSelect().clear());
 
         save.addClickListener(e -> {
             Notification.show("Not implemented");
@@ -83,10 +83,10 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         Div editorDiv = new Div();
         editorDiv.setId("editor-layout");
         FormLayout formLayout = new FormLayout();
-        addFormItem(editorDiv, formLayout, firstname, "First name");
-        addFormItem(editorDiv, formLayout, lastname, "Last name");
+//        addFormItem(editorDiv, formLayout, firstname, "First name");
+//        addFormItem(editorDiv, formLayout, lastname, "Last name");
         addFormItem(editorDiv, formLayout, email, "Email");
-        addFormItem(editorDiv, formLayout, password, "Password");
+//        addFormItem(editorDiv, formLayout, roles, "Roles");
         createButtonLayout(editorDiv);
         splitLayout.addToSecondary(editorDiv);
     }
@@ -96,9 +96,9 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         buttonLayout.setId("button-layout");
         buttonLayout.setWidthFull();
         buttonLayout.setSpacing(true);
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        delete.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(cancel, save);
+        buttonLayout.add(delete, save);
         editorDiv.add(buttonLayout);
     }
 
@@ -107,7 +107,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         wrapper.setId("wrapper");
         wrapper.setWidthFull();
         splitLayout.addToPrimary(wrapper);
-        wrapper.add(employees);
+        wrapper.add(users);
     }
 
     private void addFormItem(Div wrapper, FormLayout formLayout,
@@ -122,14 +122,11 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
         // Lazy init of the grid items, happens only when we are sure the view will be
         // shown to the user
-        employees.setItems(service.getEmployees());
+        users.setItems(userService.findAll());
     }
 
-    private void populateForm(Employee value) {
+    private void populateForm(User value) {
         // Value can be null as well, that clears the form
         binder.readBean(value);
-
-        // The password field isn't bound through the binder, so handle that
-        password.setValue("");
     }
 }

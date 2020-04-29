@@ -1,17 +1,22 @@
 package com.postnow.views.settings;
 
-import com.postnow.backend.Employee;
+import com.postnow.backend.model.Gender;
+import com.postnow.backend.model.User;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.listbox.ListBox;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -19,17 +24,24 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.postnow.views.postnow.PostNowView;
 
+import java.time.LocalDate;
+
+// TODO settings
 @Route(value = "me/settings", layout = PostNowView.class)
 @PageTitle("Settings")
 @CssImport("styles/views/settings/settings-view.css")
 public class SettingsView extends Div {
 
-    private TextField firstname = new TextField();
-    private TextField lastname = new TextField();
-    private TextField email = new TextField();
-    private TextArea notes = new TextArea();
+    private FormLayout formLayout = new FormLayout();
 
-    private Button cancel = new Button("Cancel");
+    private TextField firstName = new TextField();
+    private TextField lastName = new TextField();
+    private EmailField email = new EmailField();
+    private PasswordField password = new PasswordField();
+    private ListBox<String> genderList = new ListBox<>();
+    private DatePicker birthDateCalendar = new DatePicker();
+
+    private Button clear = new Button("Clear");
     private Button save = new Button("Save");
 
     public SettingsView() {
@@ -41,12 +53,14 @@ public class SettingsView extends Div {
         createButtonLayout(wrapper);
 
         // Configure Form
-        Binder<Employee> binder = new Binder<>(Employee.class);
+        Binder<User> binder = new Binder<>(User.class);
 
         // Bind fields. This where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
 
-        cancel.addClickListener(e -> binder.readBean(null));
+        clear.addClickListener(e -> {
+            Notification.show("Not implemented");
+        });
         save.addClickListener(e -> {
             Notification.show("Not implemented");
         });
@@ -66,17 +80,21 @@ public class SettingsView extends Div {
         return wrapper;
     }
 
+    // todo
     private void createFormLayout(VerticalLayout wrapper) {
-        FormLayout formLayout = new FormLayout();
-        addFormItem(wrapper, formLayout, firstname, "First name");
-        addFormItem(wrapper, formLayout, lastname, "Last name");
-        FormLayout.FormItem emailFormItem = addFormItem(wrapper, formLayout,
-                email, "Email");
-        formLayout.setColspan(emailFormItem, 2);
-        FormLayout.FormItem notesFormItem = addFormItem(wrapper, formLayout,
-                notes, "Notes");
-        formLayout.setColspan(notesFormItem, 2);
+        addFormItem(wrapper, formLayout, firstName, "First name");
+        addFormItem(wrapper, formLayout, lastName, "Last name");
+        addFormItem(wrapper, formLayout, email, "Email");
+        addFormItem(wrapper, formLayout, password, "Password");
+
+        genderList.setItems(Gender.MEN.toString(), Gender.WOMEN.toString(), Gender.OTHER.toString());
+        genderList.setValue(Gender.OTHER.toString());
+        addFormItem(wrapper, formLayout, genderList, "Gender");
+
+        birthDateCalendar.setValue(LocalDate.of(1900, 1, 1));
+        addFormItem(wrapper, formLayout, birthDateCalendar, "Birthdate");
     }
+
 
     private void createButtonLayout(VerticalLayout wrapper) {
         HorizontalLayout buttonLayout = new HorizontalLayout();
@@ -84,9 +102,9 @@ public class SettingsView extends Div {
         buttonLayout.setWidthFull();
         buttonLayout
                 .setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        clear.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(cancel);
+        buttonLayout.add(clear);
         buttonLayout.add(save);
         wrapper.add(buttonLayout);
     }

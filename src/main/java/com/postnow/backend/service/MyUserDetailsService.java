@@ -11,22 +11,28 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class MyUserDetailsService implements UserDetailsService {
-    @Autowired
     private UserService userService;
+
+    @Autowired
+    public MyUserDetailsService(UserService userService) {
+        this.userService = userService;
+    }
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userService.findUserByEmail(email);
-        List<GrantedAuthority> authorities = getUserAuthority(user.getRoles());
-        return buildUserForAuthentication(user, authorities);
+        Optional<User> user = userService.findUserByEmail(email);
+
+        List<GrantedAuthority> authorities = null;
+        if(user.isPresent()) {
+            authorities = getUserAuthority(user.map(User::getRoles).get());
+            return buildUserForAuthentication(user.get(), authorities);
+        }
+        return null;
     }
 
     private List<GrantedAuthority> getUserAuthority(Set<UserRole> userRoles) {

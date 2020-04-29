@@ -32,12 +32,13 @@ public class Post implements Serializable {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostComment> commentList = new ArrayList<>();
 
-    public void addComment(PostComment comment) {
+    public void addPost(PostComment comment) {
         commentList.add(comment);
         comment.setPost(this);
     }
 
-    public void removeComment(PostComment comment) {
+    // idn if it'll be available
+    public void removePost(PostComment comment) {
         commentList.remove(comment);
         comment.setPost(null);
     }

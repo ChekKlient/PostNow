@@ -30,7 +30,7 @@ public class User implements Serializable {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Length(min = 8)
+//    @Length(min = 8)
     @Column(unique = true, nullable = false)
     private String password;
 

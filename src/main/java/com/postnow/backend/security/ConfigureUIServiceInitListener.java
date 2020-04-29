@@ -5,7 +5,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import org.springframework.stereotype.Component;
-import com.postnow.views.login.LoginView;
+import com.postnow.views.MainView;
 
 @Component
 public class ConfigureUIServiceInitListener implements VaadinServiceInitListener {
@@ -25,9 +25,9 @@ public class ConfigureUIServiceInitListener implements VaadinServiceInitListener
      *            before navigation event with event details
      */
     private void beforeEnter(BeforeEnterEvent event) {
-        if (!LoginView.class.equals(event.getNavigationTarget())
+        if (!MainView.class.equals(event.getNavigationTarget())
                 && !SecurityUtils.isUserLoggedIn()) {
-            event.rerouteTo(LoginView.class);
+            event.rerouteTo(MainView.class);
         }
     }
 }

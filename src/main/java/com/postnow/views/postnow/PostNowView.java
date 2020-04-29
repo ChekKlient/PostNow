@@ -6,10 +6,13 @@ import java.util.Optional;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.component.tabs.Tabs;
@@ -27,7 +30,7 @@ import com.postnow.views.adminusers.AdminusersView;
  */
 @JsModule("./styles/shared-styles.js")
 @CssImport(value = "styles/views/postnow/post-now-view.css", themeFor = "vaadin-app-layout")
-@PWA(name = "PostNow", shortName = "PostNow")
+@PWA(name = "PostNow", shortName = "PNow")
 @Theme(value = Lumo.class, variant = Lumo.LIGHT)
 public class PostNowView extends AppLayout {
 

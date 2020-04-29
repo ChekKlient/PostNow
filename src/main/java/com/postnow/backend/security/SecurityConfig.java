@@ -1,8 +1,6 @@
 package com.postnow.backend.security;
 
 import com.postnow.backend.service.MyUserDetailsService;
-import com.postnow.backend.service.UserService;
-import com.postnow.views.registration.RegistrationView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,11 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 
 /**
@@ -55,9 +49,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // the user is redirected after login.
                 .requestCache().requestCache(new CustomRequestCache())
 
-                // TODO: dlaczego to kurwa nie dziala?!!!!!!!!!!!!!!!!!!!!!!
-                .and().authorizeRequests().antMatchers("/registration").permitAll()
-
                 // Restrict access to our application.
                 .and().authorizeRequests()
 
@@ -69,7 +60,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 // Configure the login page.
                 .and().formLogin().loginPage(LOGIN_URL).permitAll().loginProcessingUrl(LOGIN_PROCESSING_URL)
-                .failureUrl(LOGIN_FAILURE_URL).successForwardUrl(LOGIN_SUCCESS_URL)
+                .successForwardUrl(LOGIN_SUCCESS_URL).failureUrl(LOGIN_FAILURE_URL)
 
                 // Configure logout
                 .and().logout().logoutSuccessUrl(LOGOUT_SUCCESS_URL);
@@ -80,18 +71,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         auth
                 .userDetailsService(myUserDetailsService)
                 .passwordEncoder(bCryptPasswordEncoder);
-    }
-
-    @Bean
-    @Override
-    public UserDetailsService userDetailsService() {
-        UserDetails user =
-                User.withUsername("user")
-                        .password("{noop}password")
-                        .roles("USER")
-                        .build();
-
-        return new InMemoryUserDetailsManager(user);
     }
 
     @Bean

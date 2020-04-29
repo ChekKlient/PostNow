@@ -1,7 +1,7 @@
 package com.postnow.views.postnow;
 
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 
@@ -9,7 +9,7 @@ import com.vaadin.flow.router.Route;
 public class DeniedAccessView extends VerticalLayout {
     DeniedAccessView() {
         FormLayout formLayout = new FormLayout();
-        formLayout.add(new Label("Access denied!"));
+        formLayout.add(new H1("Access denied!"));
         add(formLayout);
     }
 }
