@@ -31,7 +31,7 @@ public class User implements Serializable {
     private String email;
 
 //    @Length(min = 8)
-    @Column(unique = true, nullable = false)
+    @Column(unique = false, nullable = false)
     private String password;
 
     @Column(nullable = false)
@@ -39,7 +39,7 @@ public class User implements Serializable {
 //    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
 //    private Set<UserRole> roles = new HashSet<>();
 
-    @ManyToMany(cascade = CascadeType.MERGE)
+    @ManyToMany(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<UserRole> roles;
 

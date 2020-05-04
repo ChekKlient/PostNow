@@ -33,9 +33,9 @@ public class UserAdditionalData implements Serializable {
     @Column(nullable = false)
     private String lastName;
 
-    @Enumerated(EnumType.STRING)
+//    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Gender gender;
+    private String gender;
 
     @Past
     @Column(nullable = false)
@@ -54,5 +54,9 @@ public class UserAdditionalData implements Serializable {
     public void setBirthDate(String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         this.birthDate = LocalDate.parse(date, formatter);
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
     }
 }

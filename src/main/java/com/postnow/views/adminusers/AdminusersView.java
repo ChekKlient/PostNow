@@ -1,7 +1,14 @@
 package com.postnow.views.adminusers;
 
-import com.postnow.backend.model.User;
+import com.postnow.backend.model.*;
 import com.postnow.backend.service.UserService;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.editor.Editor;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.button.Button;
@@ -22,7 +29,11 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.postnow.views.postnow.PostNowView;
 
-// TODO admin panel
+import javax.validation.constraints.Email;
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.*;
+
 @Route(value = "admin/users", layout = PostNowView.class)
 @PageTitle("Admin - users")
 @CssImport("styles/views/adminusers/adminusers-view.css")
@@ -32,16 +43,19 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
     private Grid<User> users;
 
-//    private TextField firstname = new TextField();
-//    private TextField lastname = new TextField();
+//    private TextField id = new TextField();
+    private TextField firstName = new TextField();
+    private TextField lastName = new TextField();
     private TextField email = new TextField();
-//    private TextField birthdate = new TextField();
-//    private TextField roles = new TextField();
+    private DatePicker birthDate = new DatePicker();
+    private Select<Gender> genderSelect = new Select<>();
+    private Select<Role> userRoleSelect = new Select<>();
 
     private Button delete = new Button("Delete");
     private Button save = new Button("Save");
 
-    private Binder<User> binder;
+    private Binder<User> userBinder;
+    private Binder<UserAdditionalData> userAdditionalDataBinder;
 
     public AdminusersView() {
         setId("adminusers-view");
@@ -49,25 +63,58 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         users = new Grid<>();
         users.addThemeVariants(GridVariant.LUMO_NO_BORDER);
         users.setHeightFull();
-        users.addColumn(User::getEmail).setHeader("Email");
-//        users.addColumn(User::getRoles).setHeader("Roles");
+
+        users.addColumn(User::getId).setWidth("2em")
+                .setHeader("IDs");
+        users.addColumn(user -> user.getUserAdditionalData().getFirstName())
+                .setHeader("First name");
+        users.addColumn(user -> user.getUserAdditionalData().getLastName())
+                .setHeader("Last name");
+        users.addColumn(User::getEmail)
+                .setHeader("Email");
+        users.addColumn(user -> Period.between(user.getUserAdditionalData().getBirthDate(), LocalDate.now()).getYears())
+                .setHeader("Age");
+        users.addColumn(user -> user.getUserAdditionalData().getGender())
+                .setHeader("Gender");
+        users.addColumn(user -> userService.findUserRoleById(user.getRoles()))
+                .setHeader("Roles");
 
         //when a row is selected or deselected, populate form
         users.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
 
         // Configure Form
-        binder = new Binder<>(User.class);
+        userBinder = new Binder<>(User.class);
+        userAdditionalDataBinder = new Binder<>(UserAdditionalData.class);
 
         // Bind fields. This where you'd define e.g. validation rules
-        binder.bindInstanceFields(this);
-        // note that password field isn't bound since that property doesn't exist in
-        // Employee
+        userBinder.bindInstanceFields(this);
+        userAdditionalDataBinder.bindInstanceFields(this);
 
         // the grid valueChangeEvent will clear the form too
-        delete.addClickListener(e -> users.asSingleSelect().clear());
+        delete.addClickListener(e -> {
+            User user = users.asSingleSelect().getValue();
+
+            userService.deleteUserByEmail(user.getEmail());
+            deleteOneRowInGrid(users, user);
+
+//           todo users.deselectAll();//.clear();
+            Notification.show("Deleted");
+            //todo Notification.show("deleteUserByEmail error");
+        });
 
         save.addClickListener(e -> {
-            Notification.show("Not implemented");
+            User updatedUser = new User();
+            updatedUser.setEmail(this.email.getValue());
+
+            Optional<UserRole> userRole = userService.findUserRoleByName(this.userRoleSelect.getValue());
+            updatedUser.setRoles(new HashSet<UserRole>(Collections.singletonList(userRole.get())));
+            updatedUser.getUserAdditionalData().setBirthDate(this.birthDate.getValue());
+            updatedUser.getUserAdditionalData().setFirstName(this.firstName.getValue());
+            updatedUser.getUserAdditionalData().setLastName(this.lastName.getValue());
+            updatedUser.getUserAdditionalData().setGender(this.genderSelect.getValue().name());
+
+            userService.updateUser(users.asSingleSelect().getValue().getId(), updatedUser);
+            Notification.show("Updated " + this.firstName.getValue());
         });
 
         SplitLayout splitLayout = new SplitLayout();
@@ -83,10 +130,37 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         Div editorDiv = new Div();
         editorDiv.setId("editor-layout");
         FormLayout formLayout = new FormLayout();
-//        addFormItem(editorDiv, formLayout, firstname, "First name");
-//        addFormItem(editorDiv, formLayout, lastname, "Last name");
+
+//        addFormItem(editorDiv, formLayout, id, "ID");
+        addFormItem(editorDiv, formLayout, firstName, "First name");
+        addFormItem(editorDiv, formLayout, lastName, "Last name");
         addFormItem(editorDiv, formLayout, email, "Email");
-//        addFormItem(editorDiv, formLayout, roles, "Roles");
+
+        // DatePicker
+        formLayout.addFormItem(birthDate, "Birthday");
+        editorDiv.add(formLayout);
+        birthDate.getElement().getClassList().add("full-width");
+        birthDate.setReadOnly(false); // default is true o_O
+        // !DatePicker
+
+        // Gender
+        genderSelect.setItems(Gender.values());
+        genderSelect.setPlaceholder("Select gender");
+        genderSelect.setValue(Gender.OTHER); // todo genderSelect
+        formLayout.addFormItem(genderSelect, "Gender");
+        editorDiv.add(formLayout);
+        genderSelect.getElement().getClassList().add("full-width");
+        // !Gender
+
+        // Roles
+        userRoleSelect.setItems(Role.values());
+        userRoleSelect.setPlaceholder("Select new role");
+        userRoleSelect.setValue(Role.USER); // todo userRoleSelect
+        formLayout.addFormItem(userRoleSelect, "Roles");
+        editorDiv.add(formLayout);
+        userRoleSelect.getElement().getClassList().add("full-width");
+        // !Roles
+
         createButtonLayout(editorDiv);
         splitLayout.addToSecondary(editorDiv);
     }
@@ -111,7 +185,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
     }
 
     private void addFormItem(Div wrapper, FormLayout formLayout,
-            AbstractField field, String fieldName) {
+                             AbstractField<TextField, String> field, String fieldName) {
         formLayout.addFormItem(field, fieldName);
         wrapper.add(formLayout);
         field.getElement().getClassList().add("full-width");
@@ -119,7 +193,6 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
     @Override
     public void afterNavigation(AfterNavigationEvent event) {
-
         // Lazy init of the grid items, happens only when we are sure the view will be
         // shown to the user
         users.setItems(userService.findAll());
@@ -127,6 +200,17 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
     private void populateForm(User value) {
         // Value can be null as well, that clears the form
-        binder.readBean(value);
+        userBinder.readBean(value);
+        userAdditionalDataBinder.readBean(value.getUserAdditionalData());
+
+    }
+
+    private <T> void deleteOneRowInGrid(Grid<T> grid, T item) {
+        // If grid is null then throw illegal argument exception.
+        Objects.requireNonNull(grid, "Grid cannot be null.");
+
+        ListDataProvider<T> dp = (ListDataProvider<T>) users.getDataProvider();
+        dp.getItems().remove(item);
+        dp.refreshAll();
     }
 }

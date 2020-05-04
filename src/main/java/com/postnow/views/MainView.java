@@ -96,7 +96,7 @@ public class MainView extends Div implements BeforeEnterObserver {
             user.setPassword(password.getValue());
             user.getUserAdditionalData().setFirstName(firstName.getValue());
             user.getUserAdditionalData().setLastName(lastName.getValue());
-            user.getUserAdditionalData().setGender(Gender.valueOf(genderList.getValue()));
+            user.getUserAdditionalData().setGender(Gender.valueOf(genderList.getValue()).toString());
             user.getUserAdditionalData().setBirthDate(birthDateCalendar.getValue().toString());
 
             try {
