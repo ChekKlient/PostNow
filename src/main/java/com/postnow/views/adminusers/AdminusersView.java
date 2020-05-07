@@ -2,17 +2,11 @@ package com.postnow.views.adminusers;
 
 import com.postnow.backend.model.*;
 import com.postnow.backend.service.UserService;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.grid.GridSortOrder;
-import com.vaadin.flow.component.grid.editor.Editor;
-import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.data.provider.ListDataProvider;
-import org.hibernate.validator.constraints.Length;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.postnow.views.postnow.PostNowView;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -20,16 +14,24 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.postnow.views.postnow.PostNowView;
+import org.apache.coyote.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.validation.constraints.Email;
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
@@ -43,7 +45,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
     private Grid<User> users;
 
-//    private TextField id = new TextField();
+    //    private TextField id = new TextField();
     private TextField firstName = new TextField();
     private TextField lastName = new TextField();
     private TextField email = new TextField();
@@ -51,8 +53,8 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
     private Select<Gender> genderSelect = new Select<>();
     private Select<Role> userRoleSelect = new Select<>();
 
-    private Button delete = new Button("Delete");
-    private Button save = new Button("Save");
+    private Button deleteButton = new Button("Delete");
+    private Button saveButton = new Button("Save");
 
     private Binder<User> userBinder;
     private Binder<UserAdditionalData> userAdditionalDataBinder;
@@ -91,30 +93,56 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         userAdditionalDataBinder.bindInstanceFields(this);
 
         // the grid valueChangeEvent will clear the form too
-        delete.addClickListener(e -> {
+        deleteButton.addClickListener(e -> {
             User user = users.asSingleSelect().getValue();
-
             userService.deleteUserByEmail(user.getEmail());
-            deleteOneRowInGrid(users, user);
 
-//           todo users.deselectAll();//.clear();
-            Notification.show("Deleted");
-            //todo Notification.show("deleteUserByEmail error");
+            clearForm();
+            refreshGrid();
+            Notification.show("Deleted user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
+
+            // if current user deletes himself
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (users.asSingleSelect().getValue().getEmail().equals(((UserDetails) principal).getUsername()))
+                logoutCurrentUser();
+
+//            todo: Notification.show("deleteUserByEmail error");
         });
 
-        save.addClickListener(e -> {
-            User updatedUser = new User();
-            updatedUser.setEmail(this.email.getValue());
+        saveButton.addClickListener(e -> {
+            User user = new User();
+            user.setId(users.asSingleSelect().getValue().getId());
 
             Optional<UserRole> userRole = userService.findUserRoleByName(this.userRoleSelect.getValue());
-            updatedUser.setRoles(new HashSet<UserRole>(Collections.singletonList(userRole.get())));
-            updatedUser.getUserAdditionalData().setBirthDate(this.birthDate.getValue());
-            updatedUser.getUserAdditionalData().setFirstName(this.firstName.getValue());
-            updatedUser.getUserAdditionalData().setLastName(this.lastName.getValue());
-            updatedUser.getUserAdditionalData().setGender(this.genderSelect.getValue().name());
 
-            userService.updateUser(users.asSingleSelect().getValue().getId(), updatedUser);
-            Notification.show("Updated " + this.firstName.getValue());
+            user.setEmail(this.email.getValue());
+            user.setRoles(new HashSet<>(Collections.singletonList(userRole.get())));
+
+
+            user.getUserAdditionalData().setBirthDate(this.birthDate.getValue());
+
+            user.getUserAdditionalData().setFirstName(this.firstName.getValue());
+            user.getUserAdditionalData().setLastName(this.lastName.getValue());
+            user.getUserAdditionalData().setGender(this.genderSelect.getValue().name());
+
+            userService.updateUser(user.getId(), user);
+            Notification.show("Updated user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
+
+            // if current user is updating his e-mail (username) or roles (admin/user)
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String principalUserName = ((UserDetails) principal).getUsername();
+            if (users.asSingleSelect().getValue().getEmail().equals(principalUserName) && (
+                    !user.getEmail().equals(principalUserName) ||                                       // email change
+                            !user.getRoles().toString().equals(users.asSingleSelect().getValue().getRoles().toString()))) {   // roles change
+                logoutCurrentUser();    // then
+            }
+            // else, e.g. current user is updating another user
+            else {
+                clearForm();
+                refreshGrid();
+                users.select(user);
+                populateForm(users.asSingleSelect().getValue());
+            }
         });
 
         SplitLayout splitLayout = new SplitLayout();
@@ -131,7 +159,6 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         editorDiv.setId("editor-layout");
         FormLayout formLayout = new FormLayout();
 
-//        addFormItem(editorDiv, formLayout, id, "ID");
         addFormItem(editorDiv, formLayout, firstName, "First name");
         addFormItem(editorDiv, formLayout, lastName, "Last name");
         addFormItem(editorDiv, formLayout, email, "Email");
@@ -141,25 +168,20 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         editorDiv.add(formLayout);
         birthDate.getElement().getClassList().add("full-width");
         birthDate.setReadOnly(false); // default is true o_O
-        // !DatePicker
 
         // Gender
         genderSelect.setItems(Gender.values());
         genderSelect.setPlaceholder("Select gender");
-        genderSelect.setValue(Gender.OTHER); // todo genderSelect
         formLayout.addFormItem(genderSelect, "Gender");
         editorDiv.add(formLayout);
         genderSelect.getElement().getClassList().add("full-width");
-        // !Gender
 
         // Roles
         userRoleSelect.setItems(Role.values());
         userRoleSelect.setPlaceholder("Select new role");
-        userRoleSelect.setValue(Role.USER); // todo userRoleSelect
         formLayout.addFormItem(userRoleSelect, "Roles");
         editorDiv.add(formLayout);
         userRoleSelect.getElement().getClassList().add("full-width");
-        // !Roles
 
         createButtonLayout(editorDiv);
         splitLayout.addToSecondary(editorDiv);
@@ -170,9 +192,9 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         buttonLayout.setId("button-layout");
         buttonLayout.setWidthFull();
         buttonLayout.setSpacing(true);
-        delete.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(delete, save);
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        buttonLayout.add(deleteButton, saveButton);
         editorDiv.add(buttonLayout);
     }
 
@@ -184,8 +206,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         wrapper.add(users);
     }
 
-    private void addFormItem(Div wrapper, FormLayout formLayout,
-                             AbstractField<TextField, String> field, String fieldName) {
+    private void addFormItem(Div wrapper, FormLayout formLayout, AbstractField<TextField, String> field, String fieldName) {
         formLayout.addFormItem(field, fieldName);
         wrapper.add(formLayout);
         field.getElement().getClassList().add("full-width");
@@ -193,24 +214,39 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
     @Override
     public void afterNavigation(AfterNavigationEvent event) {
-        // Lazy init of the grid items, happens only when we are sure the view will be
-        // shown to the user
+        // Lazy init of the grid items,
+        // ! happens only when we are sure the view will be shown to the user
         users.setItems(userService.findAll());
     }
 
-    private void populateForm(User value) {
-        // Value can be null as well, that clears the form
-        userBinder.readBean(value);
-        userAdditionalDataBinder.readBean(value.getUserAdditionalData());
-
+    private void populateForm(User user) {
+        userBinder.readBean(user);
+        userAdditionalDataBinder.readBean(user.getUserAdditionalData());
+        genderSelect.setValue(Gender.valueOf(user.getUserAdditionalData().getGender())); // for editorLayout
+        userRoleSelect.setValue(Role.valueOf(user.getRoles().stream().findFirst().get().getRole()));  // ... same
     }
 
-    private <T> void deleteOneRowInGrid(Grid<T> grid, T item) {
-        // If grid is null then throw illegal argument exception.
-        Objects.requireNonNull(grid, "Grid cannot be null.");
+    private void clearForm() {
+        // Value can be null as well, that clears the form
+        userBinder.readBean(null);
+        userAdditionalDataBinder.readBean(null);
+        genderSelect.setValue(null);
+        userRoleSelect.setValue(null);
+    }
 
-        ListDataProvider<T> dp = (ListDataProvider<T>) users.getDataProvider();
-        dp.getItems().remove(item);
+    private void refreshGrid() {
+        Objects.requireNonNull(users, "Grid cannot be null.");
+
+        ListDataProvider<User> dp = (ListDataProvider<User>) users.getDataProvider();
+        dp.getItems().removeAll(((ListDataProvider<User>) users.getDataProvider()).getItems());
+        dp.getItems().addAll(userService.findAll());
         dp.refreshAll();
+    }
+
+    private void logoutCurrentUser() {
+        HttpServletRequest request =
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+                        .getRequest();
+        new SecurityContextLogoutHandler().logout(request, null, null);
     }
 }

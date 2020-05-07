@@ -84,9 +84,11 @@ public class UserService {
 
             value.getUserAdditionalData().setFirstName(user.getUserAdditionalData().getFirstName());
             value.getUserAdditionalData().setLastName(user.getUserAdditionalData().getLastName());
-
-            value.getUserAdditionalData().setBirthDate(user.getUserAdditionalData().getBirthDate());
             value.getUserAdditionalData().setGender(user.getUserAdditionalData().getGender());
+
+            if(user.getUserAdditionalData().getBirthDate().plusYears(13).isAfter(LocalDate.now()))
+                throw new ValidationException("You must be at least 13 y/o");
+            value.getUserAdditionalData().setBirthDate(user.getUserAdditionalData().getBirthDate());
         });
     }
 }

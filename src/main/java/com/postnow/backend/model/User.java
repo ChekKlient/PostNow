@@ -30,14 +30,11 @@ public class User implements Serializable {
     @Column(unique = true, nullable = false)
     private String email;
 
-//    @Length(min = 8)
     @Column(unique = false, nullable = false)
     private String password;
 
     @Column(nullable = false)
     private Boolean active;
-//    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-//    private Set<UserRole> roles = new HashSet<>();
 
     @ManyToMany(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
