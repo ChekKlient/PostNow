@@ -1,5 +1,6 @@
 package com.postnow.backend.security;
 
+import com.postnow.backend.model.Role;
 import com.postnow.backend.service.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String LOGIN_URL = "/login";
     private static final String LOGOUT_SUCCESS_URL = "/login";
     private static final String LOGIN_SUCCESS_URL = "/me/dashboard";
+    private static final String ACCESS_DENIED = "/accessDenied";
+    private static final String ADMIN_PAGE = "/admin/**";
 
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -42,8 +45,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // Not using Spring CSRF here to be able to use plain HTML for the login page
         http.csrf().disable()
 
-                .exceptionHandling().accessDeniedPage("/accessDenied")
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+                .exceptionHandling().accessDeniedPage(ACCESS_DENIED)
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint(LOGIN_PROCESSING_URL))
                 .and()
                 // Register our CustomRequestCache, that saves unauthorized access attempts, so
                 // the user is redirected after login.
@@ -54,6 +57,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 // Allow all flow internal requests.
                 .requestMatchers(SecurityUtils::isFrameworkInternalRequest).permitAll()
+
+                .antMatchers(ADMIN_PAGE).hasRole(Role.ADMIN.name())
 
                 // Allow all requests by logged in users.
                 .anyRequest().authenticated()
@@ -112,6 +117,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/h2-console/**",
 
                 // (production mode) static resources
-                "/frontend-es5/**", "/frontend-es6/**");
+                "/frontend-es5/**", "/frontend-es6/**"
+        );
     }
 }

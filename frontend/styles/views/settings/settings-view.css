@@ -1,6 +1,7 @@
 #settings-view {
   display: block;
   padding: 1rem;
+  margin-left: -1em;
 }
 
 :host {
@@ -13,4 +14,30 @@
   flex-wrap: wrap-reverse;
   width: 100%;
   justify-content: flex-end;
+}
+
+@media (device-width: 1920px) {
+  html{
+    zoom: 1.4;
+  }
+}
+@media (device-width: 2560px) {
+  html{
+    zoom: 1.867;
+  }
+}
+@media (device-width: 2736px) {
+  html{
+    zoom: 1.995;
+  }
+}
+@media (device-width: 2880px) {
+  html{
+    zoom: 2.1;
+  }
+}
+@media (device-width: 3840px) {
+  html{
+    zoom: 2.8;
+  }
 }

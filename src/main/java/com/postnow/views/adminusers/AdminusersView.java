@@ -1,7 +1,10 @@
 package com.postnow.views.adminusers;
 
 import com.postnow.backend.model.*;
+import com.postnow.backend.security.SecurityUtils;
 import com.postnow.backend.service.UserService;
+import com.postnow.views.MainView;
+import com.postnow.views.dashboard.DashboardView;
 import com.postnow.views.postnow.PostNowView;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.button.Button;
@@ -19,12 +22,10 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.ListDataProvider;
-import com.vaadin.flow.router.AfterNavigationEvent;
-import com.vaadin.flow.router.AfterNavigationObserver;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -125,7 +126,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
             user.getUserAdditionalData().setLastName(this.lastName.getValue());
             user.getUserAdditionalData().setGender(this.genderSelect.getValue().name());
 
-            userService.updateUser(user.getId(), user);
+            userService.updateUserByAdmin(user);
             Notification.show("Updated user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
 
             // if current user is updating his e-mail (username) or roles (admin/user)
@@ -152,6 +153,14 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         createEditorLayout(splitLayout);
 
         add(splitLayout);
+    }
+
+    private void createGridLayout(SplitLayout splitLayout) {
+        Div wrapper = new Div();
+        wrapper.setId("wrapper");
+        wrapper.setWidthFull();
+        splitLayout.addToPrimary(wrapper);
+        wrapper.add(users);
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
@@ -196,14 +205,6 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         buttonLayout.add(deleteButton, saveButton);
         editorDiv.add(buttonLayout);
-    }
-
-    private void createGridLayout(SplitLayout splitLayout) {
-        Div wrapper = new Div();
-        wrapper.setId("wrapper");
-        wrapper.setWidthFull();
-        splitLayout.addToPrimary(wrapper);
-        wrapper.add(users);
     }
 
     private void addFormItem(Div wrapper, FormLayout formLayout, AbstractField<TextField, String> field, String fieldName) {

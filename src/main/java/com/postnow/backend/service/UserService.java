@@ -75,20 +75,42 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void updateUser(Long id, User user){
-        Optional<User> optionalUser = userRepository.findById(id);
+    public void updateUserByAdmin(User user){
+        // validation
+        if(user.getUserAdditionalData().getBirthDate().plusYears(13).isAfter(LocalDate.now()))
+            throw new ValidationException("You must be at least 13 y/o");
 
+        Optional<User> optionalUser = userRepository.findById(user.getId());
         optionalUser.ifPresent(value -> {
             value.setEmail(user.getEmail());
             value.setRoles(user.getRoles());
-
             value.getUserAdditionalData().setFirstName(user.getUserAdditionalData().getFirstName());
             value.getUserAdditionalData().setLastName(user.getUserAdditionalData().getLastName());
             value.getUserAdditionalData().setGender(user.getUserAdditionalData().getGender());
-
-            if(user.getUserAdditionalData().getBirthDate().plusYears(13).isAfter(LocalDate.now()))
-                throw new ValidationException("You must be at least 13 y/o");
             value.getUserAdditionalData().setBirthDate(user.getUserAdditionalData().getBirthDate());
+        });
+    }
+
+    public void updateUserBySelf(User user){
+        // validation
+        if((user.getPassword().length() < 8 || user.getPassword().length() > 25) && !user.getPassword().isBlank())
+            throw new ValidationException("Your password must be at least 8 characters long.");
+        if(user.getUserAdditionalData().getBirthDate().plusYears(13).isAfter(LocalDate.now()))
+            throw new ValidationException("You must be at least 13 y/o");
+
+        Optional<User> optionalUser = userRepository.findByEmail(user.getEmail());
+        optionalUser.ifPresent(value -> {
+            value.setEmail(user.getEmail());
+            value.getUserAdditionalData().setFirstName(user.getUserAdditionalData().getFirstName());
+            value.getUserAdditionalData().setLastName(user.getUserAdditionalData().getLastName());
+            value.getUserAdditionalData().setGender(user.getUserAdditionalData().getGender());
+            value.getUserAdditionalData().setBirthDate(user.getUserAdditionalData().getBirthDate());
+            value.getUserAdditionalData().setInRelationship(user.getUserAdditionalData().isInRelationship());
+            value.getUserAdditionalData().setPhoneNumber(user.getUserAdditionalData().getPhoneNumber());
+            value.getUserAdditionalData().setHomeTown(user.getUserAdditionalData().getHomeTown());
+
+            if(!user.getPassword().isBlank())
+                value.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         });
     }
 }

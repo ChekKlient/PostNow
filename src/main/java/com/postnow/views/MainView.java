@@ -8,6 +8,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
@@ -28,6 +29,7 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -41,6 +43,7 @@ import static com.vaadin.flow.component.notification.Notification.Position.TOP_S
 
 @Route(value = "login")
 @PageTitle("PostNow | Home page")
+@CssImport(value = "styles/views/main-view.css")
 public class MainView extends Div implements BeforeEnterObserver {
     @Autowired
     private UserService userService;
@@ -62,6 +65,8 @@ public class MainView extends Div implements BeforeEnterObserver {
     public MainView() {
         setId("main-view");
         VerticalLayout wrapper = createWrapper();
+        wrapper.setMaxWidth("1366px");
+//        formLayout.setMaxWidth("1340px");
 
         createLogin(wrapper);
         createTitle(wrapper);
@@ -124,14 +129,14 @@ public class MainView extends Div implements BeforeEnterObserver {
 
                 // and pop up with details
                 Dialog dialog = new Dialog();
-                dialog.add(new H4("Email: length 6-35 e.g. user@mail.com"),
-                        new H4("Password: length 8-25 e.g. Pass!2#4"),
-                        new H4("First name: length 3-20 e.g. John"),
-                        new H4("Last name: length 3-30 e.g. Smith"),
+                dialog.add(new H4("Email: unique & 6-35 chars e.g. user@email.com"),
+                        new H4("Password: 8-25 chars e.g. Pass!2#4"),
+                        new H4("First name: 3-20 chars e.g. John"),
+                        new H4("Last name: 3-30 chars e.g. Smith"),
                         new H4("Birthdate: you must be at least 13 y/o")
                         );
-                dialog.setWidth("20em");
-                dialog.setHeight("14em");
+                dialog.setWidth("19.5em");
+                dialog.setHeight("15em");
                 dialog.open();
             }
         });

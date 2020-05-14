@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.postnow.backend.model.Role;
+import com.postnow.backend.security.SecurityConfig;
+import com.postnow.backend.security.SecurityUtils;
+import com.postnow.views.MainView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.button.Button;
@@ -13,9 +17,13 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.PWA;
@@ -25,6 +33,9 @@ import com.postnow.views.dashboard.DashboardView;
 import com.postnow.views.settings.SettingsView;
 import com.postnow.views.adminusers.AdminusersView;
 
+import static com.vaadin.flow.component.notification.Notification.Position.TOP_CENTER;
+import static com.vaadin.flow.component.notification.Notification.Position.TOP_START;
+
 /**
  * The main view is a top-level placeholder for other views.
  */
@@ -32,11 +43,12 @@ import com.postnow.views.adminusers.AdminusersView;
 @CssImport(value = "styles/views/postnow/post-now-view.css", themeFor = "vaadin-app-layout")
 @PWA(name = "PostNow", shortName = "PNow")
 @Theme(value = Lumo.class, variant = Lumo.LIGHT)
-public class PostNowView extends AppLayout {
+public class PostNowView extends AppLayout implements BeforeEnterObserver {
 
     private final Tabs menu;
 
     public PostNowView() {
+        setId("post-now-view");
         menu = createMenuTabs();
         addToNavbar(menu);
     }
@@ -72,6 +84,24 @@ public class PostNowView extends AppLayout {
     private static <T extends HasComponents> T populateLink(T a, String title) {
         a.add(title);
         return a;
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        if (AdminusersView.class.equals(event.getNavigationTarget())
+                && !SecurityUtils.hasRole(Role.ADMIN.name())) {
+            if(SecurityUtils.isUserLoggedIn())
+                event.rerouteTo(DashboardView.class);
+            else
+                event.rerouteTo(MainView.class);
+
+            Notification errorNotification = new Notification();
+            errorNotification.setText("You don't have access, switch to the admin account");
+            errorNotification.setDuration(2000);
+            errorNotification.setPosition(TOP_START);
+            errorNotification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            errorNotification.open();
+        }
     }
 
     @Override
