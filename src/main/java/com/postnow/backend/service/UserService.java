@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import javax.validation.ValidationException;
-import javax.validation.constraints.Email;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -34,12 +33,17 @@ public class UserService {
     public Optional<User> findUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    public Optional<User> findUserById(Long userId) {
+        return userRepository.findById(userId);
+    }
+
     public List<User> findAll() {
         return userRepository.findAll();
     }
     public void deleteUserByEmail(String email) { userRepository.deleteUserByEmail(email); }
 
-    public String findUserRoleById(Set<UserRole> userRoleSet){
+    public String findRole(Set<UserRole> userRoleSet){
         StringBuilder str = new StringBuilder();
 
         for(var urSet : userRoleSet){
@@ -55,7 +59,7 @@ public class UserService {
         return str.toString();
     }
 
-    public Optional<UserRole> findUserRoleByName(Role userRole){
+    public Optional<UserRole> findRoleByName(Role userRole){
         return userRoleRepository.findByRole(userRole.name());
     }
 
@@ -97,6 +101,8 @@ public class UserService {
             throw new ValidationException("Your password must be at least 8 characters long.");
         if(user.getUserAdditionalData().getBirthDate().plusYears(13).isAfter(LocalDate.now()))
             throw new ValidationException("You must be at least 13 y/o");
+        if(!user.getUserAdditionalData().getPhotoURL().matches("^(?i:http|https|ftp|ftps|sftp)://[0-9A-Za-z]+(.*)\\.(?i:jpg|jpeg|png)$")) // link to photo ends with .jpg | .jpeg | .png
+            throw new ValidationException("Not allowed photo format");
 
         Optional<User> optionalUser = userRepository.findByEmail(user.getEmail());
         optionalUser.ifPresent(value -> {
@@ -108,6 +114,7 @@ public class UserService {
             value.getUserAdditionalData().setInRelationship(user.getUserAdditionalData().isInRelationship());
             value.getUserAdditionalData().setPhoneNumber(user.getUserAdditionalData().getPhoneNumber());
             value.getUserAdditionalData().setHomeTown(user.getUserAdditionalData().getHomeTown());
+            value.getUserAdditionalData().setPhotoURL(user.getUserAdditionalData().getPhotoURL());
 
             if(!user.getPassword().isBlank())
                 value.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));

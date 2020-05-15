@@ -1,22 +1,17 @@
 package com.postnow.views.postnow;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import com.postnow.backend.model.Role;
-import com.postnow.backend.security.SecurityConfig;
 import com.postnow.backend.security.SecurityUtils;
 import com.postnow.views.MainView;
+import com.postnow.views.adminusers.AdminusersView;
+import com.postnow.views.dashboard.DashboardView;
+import com.postnow.views.settings.SettingsView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.tabs.Tab;
@@ -27,13 +22,13 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.PWA;
-import com.vaadin.flow.theme.Theme;import com.vaadin.flow.theme.lumo.Lumo;
+import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.theme.lumo.Lumo;
 
-import com.postnow.views.dashboard.DashboardView;
-import com.postnow.views.settings.SettingsView;
-import com.postnow.views.adminusers.AdminusersView;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-import static com.vaadin.flow.component.notification.Notification.Position.TOP_CENTER;
 import static com.vaadin.flow.component.notification.Notification.Position.TOP_START;
 
 /**
@@ -111,10 +106,14 @@ public class PostNowView extends AppLayout implements BeforeEnterObserver {
     }
 
     private void selectTab() {
-        String target = RouteConfiguration.forSessionScope().getUrl(getContent().getClass());
+        String target = new String();
+        try { // because Navigation target 'com.postnow.views.dashboard.UserView' requires a parameter and can not be resolved. Use 'public <T, C extends Component & HasUrlParameter<T>> String getUrl(Class<? extends C> navigationTarget, T parameter)' instead
+            target = RouteConfiguration.forSessionScope().getUrl(getContent().getClass());
+        }catch (Exception ex){}
+        String finalTarget = target;
         Optional<Component> tabToSelect = menu.getChildren().filter(tab -> {
             Component child = tab.getChildren().findFirst().get();
-            return child instanceof RouterLink && ((RouterLink) child).getHref().equals(target);
+            return child instanceof RouterLink && ((RouterLink) child).getHref().equals(finalTarget);
         }).findFirst();
         tabToSelect.ifPresent(tab -> menu.setSelectedTab((Tab) tab));
     }

@@ -14,7 +14,6 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H4;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.ListBox;
@@ -29,7 +28,6 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -182,6 +180,7 @@ public class MainView extends Div implements BeforeEnterObserver {
     }
 
     private void createFormLayout(VerticalLayout wrapper) {
+        firstName.setAutofocus(true);
         addFormItem(wrapper, formLayout, firstName, "First name");
         addFormItem(wrapper, formLayout, lastName, "Last name");
         addFormItem(wrapper, formLayout, email, "Email");

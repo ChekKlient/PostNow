@@ -8,6 +8,7 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,11 +24,17 @@ public class Post implements Serializable {
     private Long id;
 
     @Column(nullable = false, updatable = false)
-    @Length(min = 3, max = 60)
+    @Length(min = 3, max = 500)
     private String text;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private User user;
+
+    private LocalDate date;
+
+    private int likes;
+    private int comments;
+    private int shares;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostComment> commentList = new ArrayList<>();
@@ -41,5 +48,14 @@ public class Post implements Serializable {
     public void removePost(PostComment comment) {
         commentList.remove(comment);
         comment.setPost(null);
+    }
+
+    @PostUpdate
+    @PostPersist
+    public void postPersist(){
+        date = LocalDate.now();
+        likes = 10;
+        comments = 10;
+        shares = 10;
     }
 }

@@ -1,7 +1,7 @@
 package com.postnow.backend.service;
 
-import com.postnow.backend.model.UserRole;
 import com.postnow.backend.model.User;
+import com.postnow.backend.model.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

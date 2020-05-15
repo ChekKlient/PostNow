@@ -1,11 +1,11 @@
 package com.postnow.backend.security;
 
+import com.postnow.views.MainView;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import org.springframework.stereotype.Component;
-import com.postnow.views.MainView;
 
 @Component
 public class ConfigureUIServiceInitListener implements VaadinServiceInitListener {

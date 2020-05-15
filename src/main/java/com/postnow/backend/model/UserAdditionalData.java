@@ -8,7 +8,6 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import javax.validation.constraints.Past;
-
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +50,9 @@ public class UserAdditionalData implements Serializable {
     @Column(unique = false, nullable = true)
     private boolean inRelationship;
 
+    @Column(unique = false, nullable = true)
+    private String photoURL;
+
     public void setBirthDate(String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         this.birthDate = LocalDate.parse(date, formatter);
@@ -58,5 +60,10 @@ public class UserAdditionalData implements Serializable {
 
     public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
+    }
+
+    @PostPersist
+    public void postPersist(){
+        this.setPhotoURL("https://www.enigmatixmedia.com/pics/demo.png");
     }
 }

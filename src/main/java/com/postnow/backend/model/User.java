@@ -9,7 +9,10 @@ import org.hibernate.validator.constraints.Length;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -54,15 +57,6 @@ public class User implements Serializable {
     public void removePost(Post post) {
         postList.remove(post);
         post.setUser(null);
-    }
-
-    public boolean equalsNoPasswordAndPostsAndComments(User user) {
-        if (this == user) return true;
-        return id.equals(user.id) &&
-                email.equals(user.email) &&
-                active.equals(user.active) &&
-                Objects.equals(roles, user.roles) &&
-                Objects.equals(userAdditionalData, user.userAdditionalData);
     }
 
     @Override

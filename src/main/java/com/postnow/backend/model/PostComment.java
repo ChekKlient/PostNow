@@ -21,7 +21,7 @@ public class PostComment implements Serializable {
     private Long id;
 
     @Column(nullable = false, updatable = true)
-    @Length(min = 1, max = 35)
+    @Length(min = 1, max = 100)
     private String text;
 
     @ManyToOne(fetch = FetchType.LAZY)

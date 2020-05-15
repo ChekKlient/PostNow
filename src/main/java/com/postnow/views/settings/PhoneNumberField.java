@@ -2,14 +2,13 @@ package com.postnow.views.settings;
 
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 
-class PhoneNumberField extends CustomField<String> {
+public class PhoneNumberField extends CustomField<String> {
 //    private final Select countryCode = new Select();
     private final TextField subscriberCode = new TextField();
 
-    PhoneNumberField() {
+    public PhoneNumberField() {
 //        countryCode.setItems("+1", "+48", "+358");
 //        countryCode.getStyle().set("width", "6em");
 //        countryCode.setPlaceholder("Code");

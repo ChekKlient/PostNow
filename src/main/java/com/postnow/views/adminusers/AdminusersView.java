@@ -1,10 +1,7 @@
 package com.postnow.views.adminusers;
 
 import com.postnow.backend.model.*;
-import com.postnow.backend.security.SecurityUtils;
 import com.postnow.backend.service.UserService;
-import com.postnow.views.MainView;
-import com.postnow.views.dashboard.DashboardView;
 import com.postnow.views.postnow.PostNowView;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.button.Button;
@@ -16,16 +13,18 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.ListDataProvider;
-import com.vaadin.flow.router.*;
-import org.apache.coyote.Response;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -35,7 +34,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
 
 @Route(value = "admin/users", layout = PostNowView.class)
 @PageTitle("Admin - users")
@@ -79,7 +81,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
                 .setHeader("Age");
         users.addColumn(user -> user.getUserAdditionalData().getGender())
                 .setHeader("Gender");
-        users.addColumn(user -> userService.findUserRoleById(user.getRoles()))
+        users.addColumn(user -> userService.findRole(user.getRoles()))
                 .setHeader("Roles");
 
         //when a row is selected or deselected, populate form
@@ -111,38 +113,53 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         });
 
         saveButton.addClickListener(e -> {
-            User user = new User();
-            user.setId(users.asSingleSelect().getValue().getId());
+            if(userBinder.hasChanges() || userAdditionalDataBinder.hasChanges() ||
+                    !genderSelect.getValue().name().
+                            equals(users.asSingleSelect().getValue().getUserAdditionalData().getGender()) ||
+                    !userRoleSelect.getValue().name().
+                            equals(users.asSingleSelect().getValue().getRoles().stream().findFirst().get().getRole()))
+            {
+                User user = new User();
+                Optional<UserRole> userRole = userService.findRoleByName(this.userRoleSelect.getValue());
 
-            Optional<UserRole> userRole = userService.findUserRoleByName(this.userRoleSelect.getValue());
+                user.setId(users.asSingleSelect().getValue().getId());
+                user.setEmail(this.email.getValue());
+                user.setRoles(new HashSet<>(Collections.singletonList(userRole.get())));
+                user.getUserAdditionalData().setBirthDate(this.birthDate.getValue());
+                user.getUserAdditionalData().setFirstName(this.firstName.getValue());
+                user.getUserAdditionalData().setLastName(this.lastName.getValue());
+                user.getUserAdditionalData().setGender(this.genderSelect.getValue().name());
 
-            user.setEmail(this.email.getValue());
-            user.setRoles(new HashSet<>(Collections.singletonList(userRole.get())));
+                userService.updateUserByAdmin(user);
 
+                Notification success = new Notification();
+                success.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                success.setText("Updated user [id=" + user.getId() + ", email=" + user.getEmail() + "]");
+                success.setDuration(3300);
+                success.open();
 
-            user.getUserAdditionalData().setBirthDate(this.birthDate.getValue());
-
-            user.getUserAdditionalData().setFirstName(this.firstName.getValue());
-            user.getUserAdditionalData().setLastName(this.lastName.getValue());
-            user.getUserAdditionalData().setGender(this.genderSelect.getValue().name());
-
-            userService.updateUserByAdmin(user);
-            Notification.show("Updated user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
-
-            // if current user is updating his e-mail (username) or roles (admin/user)
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String principalUserName = ((UserDetails) principal).getUsername();
-            if (users.asSingleSelect().getValue().getEmail().equals(principalUserName) && (
-                    !user.getEmail().equals(principalUserName) ||                                       // email change
-                            !user.getRoles().toString().equals(users.asSingleSelect().getValue().getRoles().toString()))) {   // roles change
-                logoutCurrentUser();    // then
+                // if current user is updating his e-mail (username) or roles (admin/user)
+                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                String principalUserName = ((UserDetails) principal).getUsername();
+                if (users.asSingleSelect().getValue().getEmail().equals(principalUserName) && (
+                        !user.getEmail().equals(principalUserName) ||                                       // email change
+                                !user.getRoles().toString().equals(users.asSingleSelect().getValue().getRoles().toString()))) {   // roles change
+                    logoutCurrentUser();    // then
+                }
+                // else, e.g. current user is updating another user
+                else {
+                    clearForm();
+                    refreshGrid();
+                    users.select(user);
+                    populateForm(users.asSingleSelect().getValue());
+                }
             }
-            // else, e.g. current user is updating another user
             else {
-                clearForm();
-                refreshGrid();
-                users.select(user);
-                populateForm(users.asSingleSelect().getValue());
+                Notification noChanges = new Notification();
+                noChanges.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+                noChanges.setText("There are no changes");
+                noChanges.setDuration(2000);
+                noChanges.open();
             }
         });
 
