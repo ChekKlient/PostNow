@@ -49,16 +49,6 @@ public class User implements Serializable {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostComment> commentList = new ArrayList<>();
 
-    public void addPost(Post post) {
-        postList.add(post);
-        post.setUser(this);
-    }
-
-    public void removePost(Post post) {
-        postList.remove(post);
-        post.setUser(null);
-    }
-
     @Override
     public int hashCode() {
         return Objects.hash(id, email, active, roles, userAdditionalData);

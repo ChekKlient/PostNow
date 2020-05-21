@@ -12,7 +12,9 @@
 
 #editor-layout {
   padding: var(--lumo-space-l);
-  width: 400px;
+  min-width: 20%;
+  width: 20%;
+  max-width: 49%;
 }
 
 #button-layout {

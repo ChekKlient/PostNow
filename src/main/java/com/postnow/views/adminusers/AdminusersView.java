@@ -164,7 +164,8 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         });
 
         SplitLayout splitLayout = new SplitLayout();
-        splitLayout.setSizeFull();
+        splitLayout.setHeightFull();
+        splitLayout.setMaxWidth("1366px");
 
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
