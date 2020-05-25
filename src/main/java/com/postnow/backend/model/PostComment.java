@@ -8,6 +8,9 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,9 +27,8 @@ public class PostComment implements Serializable {
     @Length(min = 1, max = 100)
     private String text;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Post post;
+    private LocalDateTime date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     private User user;
 }

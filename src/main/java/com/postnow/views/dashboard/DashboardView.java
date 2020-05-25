@@ -1,16 +1,22 @@
 package com.postnow.views.dashboard;
 
 import com.postnow.backend.model.Post;
+import com.postnow.backend.model.PostComment;
 import com.postnow.backend.model.User;
 import com.postnow.backend.service.PostService;
 import com.postnow.backend.service.UserService;
 import com.postnow.views.postnow.PostNowView;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
+import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.details.DetailsVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.IronIcon;
@@ -24,6 +30,7 @@ import com.vaadin.flow.router.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.vaadin.olli.ClipboardHelper;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -160,39 +167,56 @@ public class DashboardView extends Div implements AfterNavigationObserver{
         actions.getThemeList().add("spacing-s");
 
         IronIcon likeIcon = new IronIcon("vaadin", "heart");
-        Span likes = new Span(String.valueOf(userPost.getLikes()));
+        Span likes = new Span(String.valueOf(userPost.getLikesList().size()));
         likes.addClassName("likes");
 
+        userPost.getLikesList().forEach(user1 -> {
+            if (user1.getId().equals(user.getId()))
+                likeIcon.setColor("red");
+        });
+
         IronIcon commentIcon = new IronIcon("vaadin", "comment");
-        Span comments = new Span(String.valueOf(userPost.getComments()));
+        Span comments = new Span(String.valueOf(userPost.getCommentList().size()));
         comments.addClassName("comments");
 
         IronIcon shareIcon = new IronIcon("vaadin", "connect");
         Span shares = new Span(String.valueOf(userPost.getShares()));
         shares.addClassName("shares");
 
+        // post content sharing
+        String content = userPost.getUser().getUserAdditionalData().getFirstName() + "'s " +
+                                  userPost.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) +
+                                        "\n" + userPost.getText();
+        shareIcon.setSize("1em"); // ClipboardHelper changes size
+        shareIcon.setColor("#8d97a4"); // and color of icons
+        ClipboardHelper clipboardHelper = new ClipboardHelper(content, shareIcon);
+
         likeIcon.addClickListener(event -> {
-            if(Optional.ofNullable(likeIcon.getColor()).isPresent() && likeIcon.getColor().equals("red")){
-//    todo fix            postService.decrementLikes(userPost);
-                likeIcon.setColor("grey");
+            if(likeIcon.getColor() != null && likeIcon.getColor().equals("red")){
+                postService.iDontLikeIt(userPost, user);
+                likeIcon.setColor("#8d97a4");
                 Notification.show("You dont't like it");
             }
             else {
-//    todo fix            postService.incrementLikes(userPost);
+                postService.iLikeIt(userPost, user);
                 likeIcon.setColor("red");
                 Notification.show("You like it");
             }
+
+            refreshGrid();
         });
 
-        actions.add(likeIcon, likes, commentIcon, comments, shareIcon, shares);
+        commentIcon.addClickListener(event -> {
+            Notification.show("Not implemented");
+        });
 
-//        commentIcon.addClickListener(event -> {
-//            Notification.show("Not implemented");
-//        });
-//
-//        shareIcon.addClickListener(event -> {
-//            Notification.show("Not implemented");
-//        });
+        shareIcon.addClickListener(event -> {
+            postService.incrementShares(userPost);
+            Notification.show("In your clipboard");
+            refreshGrid();
+        });
+
+        actions.add(likeIcon, likes, commentIcon, comments, clipboardHelper, shares);
 
         return actions;
     }

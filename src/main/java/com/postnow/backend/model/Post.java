@@ -11,8 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Getter
 @Setter
@@ -33,26 +32,29 @@ public class Post implements Serializable {
     private User user;
 
     private LocalDateTime date;
-
-    private int likes;
-    private int comments;
     private int shares;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostComment> commentList = new ArrayList<>();
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "post_id")
+    private List<PostComment> commentList =  new ArrayList<>(); // linkedlist
 
-    public void incrementLikes(){
-        this.likes++;
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @JoinTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private Set<User> likesList = new HashSet<>();
+
+    public void iLikeIt(User whoLike){
+        this.likesList.add(whoLike);
     }
-    public void decrementLikes() {
-        this.likes--;
+
+    public void iDontLikeIt(User whoDislike) {
+        this.likesList.remove(whoDislike);
+        likesList.removeIf(s -> s.getId().equals(whoDislike.getId()));
     }
 
     public void incrementShares(){
         this.shares++;
     }
 
-    @PostUpdate
     @PostPersist
     public void postPersist(){
         date = LocalDateTime.now();

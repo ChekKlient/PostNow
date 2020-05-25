@@ -9,10 +9,7 @@ import org.hibernate.validator.constraints.Length;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 @Setter
@@ -47,7 +44,7 @@ public class User implements Serializable {
     private List<Post> postList = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostComment> commentList = new ArrayList<>();
+    private List<PostComment> postCommentList = new ArrayList<>();
 
     @Override
     public int hashCode() {
