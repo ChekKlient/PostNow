@@ -24,7 +24,7 @@ public class PostComment implements Serializable {
     private Long id;
 
     @Column(nullable = false, updatable = true)
-    @Length(min = 1, max = 100)
+    @Length(min = 1, max = 300)
     private String text;
 
     private LocalDateTime date;

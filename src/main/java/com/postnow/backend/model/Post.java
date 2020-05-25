@@ -38,7 +38,7 @@ public class Post implements Serializable {
     @JoinColumn(name = "post_id")
     private List<PostComment> commentList =  new ArrayList<>(); // linkedlist
 
-    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER) //todo fix, when user has no posts but gave likes then he can't be removed
     @JoinTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> likesList = new HashSet<>();
 

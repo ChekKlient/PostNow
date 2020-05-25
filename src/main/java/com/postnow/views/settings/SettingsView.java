@@ -92,7 +92,7 @@ public class SettingsView extends Div implements AfterNavigationObserver {
                 user.getUserAdditionalData().setLastName(lastName.getValue());
                 user.getUserAdditionalData().setGender(Gender.valueOf(genderSelect.getValue().name()).toString());
                 user.getUserAdditionalData().setBirthDate(birthDate.getValue().toString());
-                user.getUserAdditionalData().setHomeTown(homeTown.getValue());
+                user.getUserAdditionalData().setHomeTown(homeTown.getValue()); // todo fix, while blank
                 user.getUserAdditionalData().setPhoneNumber(phoneNumber.generateModelValue());
                 user.getUserAdditionalData().setInRelationship(inRelationship.getValue());
                 user.getUserAdditionalData().setPhotoURL(photoURL.getValue());
@@ -109,7 +109,7 @@ public class SettingsView extends Div implements AfterNavigationObserver {
 
                     reset.click();
                 } catch (Exception ex) {
-                    ex.getMessage(); // details in terminal
+                    ex.getMessage();
 
                     // notification for user
                     Notification errorRegistration = new Notification();
@@ -158,7 +158,6 @@ public class SettingsView extends Div implements AfterNavigationObserver {
         return wrapper;
     }
 
-    // todo
     private void createFormLayout(VerticalLayout wrapper) {
         newPassword.setPlaceholder("Type new password");
         genderSelect.setItems(Gender.MEN, Gender.WOMEN, Gender.OTHER);

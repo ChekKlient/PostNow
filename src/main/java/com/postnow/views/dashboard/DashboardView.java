@@ -3,22 +3,19 @@ package com.postnow.views.dashboard;
 import com.postnow.backend.model.Post;
 import com.postnow.backend.model.PostComment;
 import com.postnow.backend.model.User;
+import com.postnow.backend.repository.PostCommentRepository;
+import com.postnow.backend.repository.PostRepository;
+import com.postnow.backend.service.PostCommentService;
 import com.postnow.backend.service.PostService;
 import com.postnow.backend.service.UserService;
 import com.postnow.views.postnow.PostNowView;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.component.details.Details;
-import com.vaadin.flow.component.details.DetailsVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.IronIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -32,10 +29,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.vaadin.olli.ClipboardHelper;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 
 @Route(value = "me/dashboard", layout = PostNowView.class)
@@ -48,6 +46,8 @@ public class DashboardView extends Div implements AfterNavigationObserver{
     private PostService postService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private PostCommentService postCommentService;
 
     private Grid<Post> postGrid;
     private Button postButton;
@@ -178,6 +178,7 @@ public class DashboardView extends Div implements AfterNavigationObserver{
         IronIcon commentIcon = new IronIcon("vaadin", "comment");
         Span comments = new Span(String.valueOf(userPost.getCommentList().size()));
         comments.addClassName("comments");
+        commentIcon.setId("comments");
 
         IronIcon shareIcon = new IronIcon("vaadin", "connect");
         Span shares = new Span(String.valueOf(userPost.getShares()));
@@ -206,8 +207,45 @@ public class DashboardView extends Div implements AfterNavigationObserver{
             refreshGrid();
         });
 
+        Dialog dialog = new Dialog();
+        dialog.setOpened(false);
+        dialog.setWidth("848px");
+        dialog.setMaxHeight("80%");
+
+        TextArea textArea = new TextArea();
+        textArea.setAutofocus(true);
+        textArea.setWidth("750px");
+        textArea.setHeight("90px");
+        textArea.setPlaceholder("Type smth...");
+        textArea.setMaxLength(300);
+
+        Button commentButton = new Button("POST");
+        commentButton.getStyle().set("margin-left", "17px");
+
         commentIcon.addClickListener(event -> {
-            Notification.show("Not implemented");
+            textArea.clear();
+            dialog.removeAll(); // cleaning
+            dialog.add(textArea, commentButton, new H3());
+
+            List<PostComment> postCommentList = new ArrayList<>(postCommentService.findAllCommentsByPostId(userPost.getId())); //updateing before display
+
+            postCommentList.forEach(postComment -> {
+                dialog.add(new H5( postComment.getUser().getUserAdditionalData().getFirstName() + "'s " + postComment.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
+                dialog.add(new Span(postComment.getText()));
+                dialog.add(new H5());
+            });
+            dialog.open();
+        });
+
+        commentButton.addClickListener(event -> {
+            PostComment postComment = new PostComment();
+            postComment.setDate(LocalDateTime.now());
+            postComment.setUser(user); // logged-in user
+            postComment.setText(textArea.getValue());
+            postCommentService.addCommentToPost(userPost, postComment);
+            dialog.close();
+            refreshGrid();
+            Notification.show("Your comment has been saved");
         });
 
         shareIcon.addClickListener(event -> {
@@ -229,7 +267,7 @@ public class DashboardView extends Div implements AfterNavigationObserver{
         postGrid.setItems(postList);
     }
 
-    private void refreshGrid() {
+    private void refreshGrid() { // todo to improve
         Objects.requireNonNull(postGrid, "Grid cannot be null.");
 
         ListDataProvider<Post> dp = (ListDataProvider<Post>) postGrid.getDataProvider();

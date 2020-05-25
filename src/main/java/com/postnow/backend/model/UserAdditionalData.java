@@ -43,7 +43,7 @@ public class UserAdditionalData implements Serializable {
     @Column(unique = true, nullable = true, length = 9)
     private String phoneNumber;
 
-    @Length(min = 4, max = 35)
+    @Length(min = 3, max = 35)
     @Column(unique = false, nullable = true)
     private String homeTown;
 
