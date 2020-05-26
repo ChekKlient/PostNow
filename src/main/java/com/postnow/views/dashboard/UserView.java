@@ -11,6 +11,8 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -28,15 +30,15 @@ public class UserView extends Div implements HasUrlParameter<Long>, AfterNavigat
 
     private FormLayout formLayout = new FormLayout();
 
-    private TextField firstName = new TextField();
-    private TextField lastName = new TextField();
+    private Image profilePhoto = new Image();
+    private H1 user_data = new H1();
+
     private TextField email = new TextField();
     private DatePicker birthDate = new DatePicker();
     private TextField gender = new TextField();
     private TextField phoneNumber = new TextField();
     private TextField homeTown = new TextField();
     private Checkbox inRelationship = new Checkbox();
-    private TextField photoURL = new TextField();
     private TextField userRole = new TextField();
 
     private Binder<User> userBinder;
@@ -61,8 +63,13 @@ public class UserView extends Div implements HasUrlParameter<Long>, AfterNavigat
     }
 
     private void createTitle(VerticalLayout wrapper) {
-        H1 h1 = new H1("[todo]" + " profile");
-        wrapper.add(h1);
+        profilePhoto.setWidth("10%");
+        profilePhoto.setHeight("10%");
+        user_data.getStyle().set("margin-top", "-2.3em");
+        user_data.getStyle().set("margin-left", "11%");
+        user_data.getStyle().set("margin-bottom", "1.5em");
+
+        wrapper.add(profilePhoto, user_data);
     }
 
     private VerticalLayout createWrapper() {
@@ -78,7 +85,6 @@ public class UserView extends Div implements HasUrlParameter<Long>, AfterNavigat
         addFormItem(wrapper, formLayout, gender, "Gender");
         addFormItem(wrapper, formLayout, phoneNumber, "Phone number");
         addFormItem(wrapper, formLayout, homeTown, "Home town");
-        addFormItem(wrapper, formLayout, photoURL, "Photo");
         addFormItem(wrapper, formLayout, userRole, "Role");
         addFormItem(wrapper, formLayout, inRelationship, "In relationship");
     }
@@ -99,6 +105,9 @@ public class UserView extends Div implements HasUrlParameter<Long>, AfterNavigat
         userDetailsBinder.setReadOnly(true);
         inRelationship.setReadOnly(true);
         userRole.setReadOnly(true);
+
+        profilePhoto.setSrc(user.getUserAdditionalData().getPhotoURL());
+        user_data.setText(user.getUserAdditionalData().getFirstName() + " " + user.getUserAdditionalData().getLastName() + " profile");
     }
 
     private void setUser() {

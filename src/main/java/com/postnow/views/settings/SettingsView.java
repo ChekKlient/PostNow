@@ -147,7 +147,7 @@ public class SettingsView extends Div implements AfterNavigationObserver {
     }
 
     private void createTitle(VerticalLayout wrapper) {
-        H1 h1 = new H1("Edit your data");
+        H1 h1 = new H1("Edit your profile");
         wrapper.add(h1);
     }
 
