@@ -26,7 +26,7 @@ PostNow is a platform that allows authenticated users to write posts and comment
 ### Pictures
 ![](./github_pictures/Home_page.png)
 
-![](./github_pictures/Dashboard.png)
+![](./github_pictures/dashboard.png)
 
 ![](./github_pictures/user_profile.png)
 
