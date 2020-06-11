@@ -1,5 +1,5 @@
 package com.postnow.backend.model;
 
-public enum Gender {
+public enum GenderEnum {
     MEN, WOMEN, OTHER;
 }

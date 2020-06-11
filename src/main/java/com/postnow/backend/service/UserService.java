@@ -1,6 +1,6 @@
 package com.postnow.backend.service;
 
-import com.postnow.backend.model.Role;
+import com.postnow.backend.model.RoleEnum;
 import com.postnow.backend.model.User;
 import com.postnow.backend.model.UserRole;
 import com.postnow.backend.repository.UserRepository;
@@ -13,11 +13,12 @@ import javax.transaction.Transactional;
 import javax.validation.ValidationException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @Transactional
 public class UserService {
-    private static final String DEFAULT_ROLE = "USER", USER_ROLE = "USER", ADMIN_ROLE = "ADMIN";
+    private static final String DEFAULT_ROLE = "USER";
 
     private UserRepository userRepository;
     private UserRoleRepository userRoleRepository;
@@ -41,26 +42,43 @@ public class UserService {
     public List<User> findAll() {
         return userRepository.findAll();
     }
-    public void deleteUserByEmail(String email) { userRepository.deleteUserByEmail(email); }
+
+    public boolean deleteUserByEmail(String email) {
+        AtomicBoolean deleted = new AtomicBoolean(true);
+        userRepository.findByEmail(email).ifPresentOrElse(user -> userRepository.delete(user), () -> {
+            deleted.set(false);
+        });
+
+        return deleted.get();
+    }
 
     public String findRole(Set<UserRole> userRoleSet){
         StringBuilder str = new StringBuilder();
 
         for(var urSet : userRoleSet){
-            if(userRoleRepository.findById(urSet.getId()).get().getRole().equals(Role.ADMIN.name()))
-                str.append(Role.ADMIN);
-            if(userRoleRepository.findById(urSet.getId()).get().getRole().equals(Role.USER.name())) {
-                if(str.length() > 0)
-                    str.append(", ");
-                str.append(Role.USER);
-            }
+            userRoleRepository.findById(urSet.getId()).ifPresent(userRole -> {
+                if(userRole.getRole().equals(RoleEnum.ADMIN.name())) {
+                    if (str.length() > 0) {
+                        str.append(", ").append(RoleEnum.ADMIN);
+                    } else {
+                        str.append(RoleEnum.ADMIN);
+                    }
+                }
+                else if(userRole.getRole().equals(RoleEnum.USER.name())) {
+                    if (str.length() > 0) {
+                        str.append(", ").append(RoleEnum.USER);
+                    } else {
+                        str.append(RoleEnum.USER);
+                    }
+                }
+            });
         }
 
         return str.toString();
     }
 
-    public Optional<UserRole> findRoleByName(Role userRole){
-        return userRoleRepository.findByRole(userRole.name());
+    public Optional<UserRole> findRoleByName(RoleEnum userRoleEnum){
+        return userRoleRepository.findByRole(userRoleEnum.name());
     }
 
     public void saveUser(User user) throws ValidationException{
@@ -74,8 +92,10 @@ public class UserService {
         user.setActive(true); // todo: mail service
         Optional<UserRole> userRole = userRoleRepository.findByRole(DEFAULT_ROLE);
 
-        // in db always is DEFAULT_ROLE - check data.sql*
-        user.setRoles(new HashSet<UserRole>(Collections.singletonList(userRole.get())));
+        userRole.ifPresent(role -> {
+            user.setRoles(new HashSet<>(Collections.singletonList(role)));
+        });
+
         userRepository.save(user);
     }
 
@@ -101,10 +121,13 @@ public class UserService {
             throw new ValidationException("Your password must be at least 8 characters long.");
         if(user.getUserAdditionalData().getBirthDate().plusYears(13).isAfter(LocalDate.now()))
             throw new ValidationException("You must be at least 13 y/o");
+        if(!(user.getUserAdditionalData().getPhoneNumber().length() == 9 || user.getUserAdditionalData().getPhoneNumber().length() == 0))
+            throw new ValidationException("Your phone number is incorrect.");
         if(!user.getUserAdditionalData().getPhotoURL().matches("^(?i:http|https|ftp|ftps|sftp)://[0-9A-Za-z]+(.*)\\.(?i:jpg|jpeg|png)$")) // link to photo ends with .jpg | .jpeg | .png
             throw new ValidationException("Not allowed photo format");
 
-        Optional<User> optionalUser = userRepository.findByEmail(user.getEmail());
+        Optional<User> optionalUser = userRepository.findById(user.getId());
+
         optionalUser.ifPresent(value -> {
             value.setEmail(user.getEmail());
             value.getUserAdditionalData().setFirstName(user.getUserAdditionalData().getFirstName());

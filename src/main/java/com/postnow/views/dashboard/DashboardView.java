@@ -3,8 +3,7 @@ package com.postnow.views.dashboard;
 import com.postnow.backend.model.Post;
 import com.postnow.backend.model.PostComment;
 import com.postnow.backend.model.User;
-import com.postnow.backend.repository.PostCommentRepository;
-import com.postnow.backend.repository.PostRepository;
+import com.postnow.backend.security.SecurityConfig;
 import com.postnow.backend.service.PostCommentService;
 import com.postnow.backend.service.PostService;
 import com.postnow.backend.service.UserService;
@@ -24,6 +23,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.VaadinService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,10 +31,8 @@ import org.vaadin.olli.ClipboardHelper;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 
 @Route(value = "me/dashboard", layout = PostNowView.class)
 @PageTitle("Dashboard")
@@ -167,13 +165,11 @@ public class DashboardView extends Div implements AfterNavigationObserver{
         actions.getThemeList().add("spacing-s");
 
         IronIcon likeIcon = new IronIcon("vaadin", "heart");
-        Span likes = new Span(String.valueOf(userPost.getLikesList().size()));
+        Span likes = new Span(String.valueOf(userPost.getPostLikeList().size()));
         likes.addClassName("likes");
 
-        userPost.getLikesList().forEach(user1 -> {
-            if (user1.getId().equals(user.getId()))
-                likeIcon.setColor("red");
-        });
+        if(postService.didILikeIt(userPost, user))
+            likeIcon.setColor("red");
 
         IronIcon commentIcon = new IronIcon("vaadin", "comment");
         Span comments = new Span(String.valueOf(userPost.getCommentList().size()));
@@ -198,7 +194,7 @@ public class DashboardView extends Div implements AfterNavigationObserver{
                 likeIcon.setColor("#8d97a4");
                 Notification.show("You dont't like it");
             }
-            else {
+            else{
                 postService.iLikeIt(userPost, user);
                 likeIcon.setColor("red");
                 Notification.show("You like it");
@@ -227,7 +223,7 @@ public class DashboardView extends Div implements AfterNavigationObserver{
             dialog.removeAll(); // cleaning
             dialog.add(textArea, commentButton, new H3());
 
-            List<PostComment> postCommentList = new ArrayList<>(postCommentService.findAllCommentsByPostId(userPost.getId())); //updateing before display
+            List<PostComment> postCommentList = postCommentService.findAllCommentsByPostId(userPost.getId()); //updating before display
 
             postCommentList.forEach(postComment -> {
                 dialog.add(new H5( postComment.getUser().getUserAdditionalData().getFirstName() + "'s " + postComment.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
@@ -272,6 +268,8 @@ public class DashboardView extends Div implements AfterNavigationObserver{
 
         ListDataProvider<Post> dp = (ListDataProvider<Post>) postGrid.getDataProvider();
         dp.getItems().removeAll(((ListDataProvider<Post>) postGrid.getDataProvider()).getItems());
+        dp.getItems().clear();
+
         dp.getItems().addAll(postService.findAllByOrderByDateDesc());
         dp.refreshAll();
     }
@@ -279,6 +277,22 @@ public class DashboardView extends Div implements AfterNavigationObserver{
     private void setThisUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String principalEmail = ((UserDetails) principal).getUsername();
-        this.user = userService.findUserByEmail(principalEmail).get();
+        userService.findUserByEmail(principalEmail).ifPresentOrElse(user1 -> this.user = user1, () -> {
+            Notification.show("User cannot be set");
+            logout();
+        });
+    }
+
+    private void logout() {
+        getUI().ifPresent(ui -> {
+            // Close the VaadinServiceSession
+            ui.getSession().close();
+
+            // Invalidate underlying session instead if login info is stored there
+             VaadinService.getCurrentRequest().getWrappedSession().invalidate();
+
+            // Redirect to avoid keeping the removed UI open in the browser
+            ui.getPage().setLocation(SecurityConfig.LOGOUT_SUCCESS_URL);
+        });
     }
 }

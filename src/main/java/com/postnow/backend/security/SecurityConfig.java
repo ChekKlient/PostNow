@@ -1,6 +1,6 @@
 package com.postnow.backend.security;
 
-import com.postnow.backend.model.Role;
+import com.postnow.backend.model.RoleEnum;
 import com.postnow.backend.service.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -26,10 +26,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String LOGIN_PROCESSING_URL = "/login";
     private static final String LOGIN_FAILURE_URL = "/login?error";
     private static final String LOGIN_URL = "/login";
-    private static final String LOGOUT_SUCCESS_URL = "/login";
     private static final String LOGIN_SUCCESS_URL = "/me/dashboard";
     private static final String ACCESS_DENIED = "/accessDenied";
     private static final String ADMIN_PAGE = "/admin/**";
+    public static final String LOGOUT_SUCCESS_URL = "/login";
 
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -58,7 +58,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // Allow all flow internal requests.
                 .requestMatchers(SecurityUtils::isFrameworkInternalRequest).permitAll()
 
-                .antMatchers(ADMIN_PAGE).hasRole(Role.ADMIN.name())
+                .antMatchers(ADMIN_PAGE).hasRole(RoleEnum.ADMIN.name())
 
                 // Allow all requests by logged in users.
                 .anyRequest().authenticated()

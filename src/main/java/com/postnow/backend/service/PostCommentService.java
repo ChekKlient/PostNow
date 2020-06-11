@@ -25,14 +25,19 @@ public class PostCommentService {
 
     public void addCommentToPost(Post post, PostComment postComment){
         Optional<Post> toUpdate = postRepository.findById(post.getId());
-        toUpdate.ifPresent(post1 -> post1.getCommentList().add(postComment));
-        postRepository.save(toUpdate.get());
+
+        toUpdate.ifPresent(value -> {
+            value.getCommentList().add(postComment);
+            postRepository.save(value);
+        });
     }
 
     public List<PostComment> findAllCommentsByPostId(Long id){
         Optional<Post> post = postRepository.findById(id);
         List<PostComment> postCommentList = new ArrayList<>();
-        post.ifPresent(post1 -> postCommentList.addAll(post1.getCommentList()));
+
+        post.ifPresent(value -> postCommentList.addAll(value.getCommentList()));
+
         return postCommentList;
     }
 }

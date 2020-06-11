@@ -48,13 +48,12 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
 
     private Grid<User> users;
 
-    //    private TextField id = new TextField();
     private TextField firstName = new TextField();
     private TextField lastName = new TextField();
     private TextField email = new TextField();
     private DatePicker birthDate = new DatePicker();
-    private Select<Gender> genderSelect = new Select<>();
-    private Select<Role> userRoleSelect = new Select<>();
+    private Select<GenderEnum> genderSelect = new Select<>();
+    private Select<RoleEnum> userRoleSelect = new Select<>();
 
     private Button deleteButton = new Button("Delete");
     private Button saveButton = new Button("Save");
@@ -84,7 +83,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         users.addColumn(user -> userService.findRole(user.getRoles()))
                 .setHeader("Roles");
 
-        //when a row is selected or deselected, populate form
+        //when a row is selected populate form
         users.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
 
         // Configure Form
@@ -98,33 +97,34 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         // the grid valueChangeEvent will clear the form too
         deleteButton.addClickListener(e -> {
             User user = users.asSingleSelect().getValue();
-            userService.deleteUserByEmail(user.getEmail());
+            if (userService.deleteUserByEmail(user.getEmail())) {
 
-            clearForm();
-            refreshGrid();
-            Notification.show("Deleted user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
+                clearForm();
+                refreshGrid();
+                Notification.show("Deleted user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
 
-            // if current user deletes himself
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (users.asSingleSelect().getValue().getEmail().equals(((UserDetails) principal).getUsername()))
-                logoutCurrentUser();
-
-//            todo: Notification.show("deleteUserByEmail error");
+                // if current user deletes himself
+                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                if (users.asSingleSelect().getValue().getEmail().equals(((UserDetails) principal).getUsername()))
+                    logoutCurrentUser();
+            } else { // is unable to delete this user
+                Notification.show("Unable to delete user [id= " + user.getId() + ", email=" + user.getEmail() + "]");
+            }
         });
 
         saveButton.addClickListener(e -> {
-            if(userBinder.hasChanges() || userAdditionalDataBinder.hasChanges() ||
-                    !genderSelect.getValue().name().
-                            equals(users.asSingleSelect().getValue().getUserAdditionalData().getGender()) ||
-                    !userRoleSelect.getValue().name().
-                            equals(users.asSingleSelect().getValue().getRoles().stream().findFirst().get().getRole()))
-            {
+            if (userBinder.hasChanges() ||
+                    userAdditionalDataBinder.hasChanges() ||
+                    !genderSelect.getValue().name().equals(users.asSingleSelect().getValue().getUserAdditionalData().getGender()) ||
+                    !userRoleSelect.getValue().name().equals(users.asSingleSelect().getValue().getRoles().stream().findFirst().get().getRole())) {
+                //body
                 User user = new User();
                 Optional<UserRole> userRole = userService.findRoleByName(this.userRoleSelect.getValue());
 
                 user.setId(users.asSingleSelect().getValue().getId());
                 user.setEmail(this.email.getValue());
                 user.setRoles(new HashSet<>(Collections.singletonList(userRole.get())));
+                userRole.ifPresent(userRole1 -> user.setRoles(new HashSet<>(Collections.singletonList(userRole1))));
                 user.getUserAdditionalData().setBirthDate(this.birthDate.getValue());
                 user.getUserAdditionalData().setFirstName(this.firstName.getValue());
                 user.getUserAdditionalData().setLastName(this.lastName.getValue());
@@ -141,10 +141,12 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
                 // if current user is updating his e-mail (username) or roles (admin/user)
                 Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
                 String principalUserName = ((UserDetails) principal).getUsername();
-                if (users.asSingleSelect().getValue().getEmail().equals(principalUserName) && (
-                        !user.getEmail().equals(principalUserName) ||                                       // email change
-                                !user.getRoles().toString().equals(users.asSingleSelect().getValue().getRoles().toString()))) {   // roles change
-                    logoutCurrentUser();    // then
+
+                if (users.asSingleSelect().getValue().getEmail().equals(principalUserName) &&
+                        (!user.getEmail().equals(principalUserName) || // email change
+                        !user.getRoles().toString().equals(users.asSingleSelect().getValue().getRoles().toString()))) { // roles change
+                    //body
+                    logoutCurrentUser(); // then
                 }
                 // else, e.g. current user is updating another user
                 else {
@@ -153,8 +155,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
                     users.select(user);
                     populateForm(users.asSingleSelect().getValue());
                 }
-            }
-            else {
+            } else { // no changes (ex. same email, password etc.)
                 Notification noChanges = new Notification();
                 noChanges.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
                 noChanges.setText("There are no changes");
@@ -197,14 +198,14 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
         birthDate.setReadOnly(false); // default is true o_O
 
         // Gender
-        genderSelect.setItems(Gender.values());
+        genderSelect.setItems(GenderEnum.values());
         genderSelect.setPlaceholder("Select gender");
         formLayout.addFormItem(genderSelect, "Gender");
         editorDiv.add(formLayout);
         genderSelect.getElement().getClassList().add("full-width");
 
         // Roles
-        userRoleSelect.setItems(Role.values());
+        userRoleSelect.setItems(RoleEnum.values());
         userRoleSelect.setPlaceholder("Select new role");
         formLayout.addFormItem(userRoleSelect, "Roles");
         editorDiv.add(formLayout);
@@ -241,8 +242,10 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
     private void populateForm(User user) {
         userBinder.readBean(user);
         userAdditionalDataBinder.readBean(user.getUserAdditionalData());
-        genderSelect.setValue(Gender.valueOf(user.getUserAdditionalData().getGender())); // for editorLayout
-        userRoleSelect.setValue(Role.valueOf(user.getRoles().stream().findFirst().get().getRole()));  // ... same
+        genderSelect.setValue(GenderEnum.valueOf(user.getUserAdditionalData().getGender())); // for editorLayout
+        user.getRoles().stream().findFirst().ifPresentOrElse(userRole -> userRoleSelect.setValue(RoleEnum.valueOf(userRole.getRole())), () -> {
+            Notification.show("Cannot populate user role");
+        });
     }
 
     private void clearForm() {
@@ -267,5 +270,7 @@ public class AdminusersView extends Div implements AfterNavigationObserver {
                 ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
                         .getRequest();
         new SecurityContextLogoutHandler().logout(request, null, null);
+
+
     }
 }

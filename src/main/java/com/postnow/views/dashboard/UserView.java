@@ -1,6 +1,6 @@
 package com.postnow.views.dashboard;
 
-import com.postnow.backend.model.Role;
+import com.postnow.backend.model.RoleEnum;
 import com.postnow.backend.model.User;
 import com.postnow.backend.model.UserAdditionalData;
 import com.postnow.backend.service.UserService;
@@ -12,7 +12,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -111,8 +111,17 @@ public class UserView extends Div implements HasUrlParameter<Long>, AfterNavigat
     }
 
     private void setUser() {
-        user = userService.findUserById(userId).get();
-        userRole.setValue(Role.valueOf(user.getRoles().stream().findFirst().get().getRole()).name());
+        userService.findUserById(userId).ifPresentOrElse(user1 -> this.user = user1,
+                () -> {
+                    Notification.show("Error");
+                    getUI().ifPresent(ui -> {
+                        ui.getPage().setLocation("me/dashboard");
+                    });
+                }
+        );
+
+        user.getRoles().stream().findFirst().ifPresentOrElse(userRole1 -> userRole.setValue(RoleEnum.valueOf(userRole1.getRole()).name()),
+                () -> Notification.show("Unable to get user role"));
     }
 
     @Override

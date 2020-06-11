@@ -1,6 +1,6 @@
 package com.postnow.views.postnow;
 
-import com.postnow.backend.model.Role;
+import com.postnow.backend.model.RoleEnum;
 import com.postnow.backend.security.SecurityUtils;
 import com.postnow.views.MainView;
 import com.postnow.views.adminusers.AdminusersView;
@@ -84,7 +84,7 @@ public class PostNowView extends AppLayout implements BeforeEnterObserver {
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         if (AdminusersView.class.equals(event.getNavigationTarget())
-                && !SecurityUtils.hasRole(Role.ADMIN.name())) {
+                && !SecurityUtils.hasRole(RoleEnum.ADMIN.name())) {
             if(SecurityUtils.isUserLoggedIn())
                 event.rerouteTo(DashboardView.class);
             else
@@ -107,14 +107,21 @@ public class PostNowView extends AppLayout implements BeforeEnterObserver {
 
     private void selectTab() {
         String target = new String();
+
         try { // because Navigation target 'com.postnow.views.dashboard.UserView' requires a parameter and can not be resolved. Use 'public <T, C extends Component & HasUrlParameter<T>> String getUrl(Class<? extends C> navigationTarget, T parameter)' instead
             target = RouteConfiguration.forSessionScope().getUrl(getContent().getClass());
         }catch (Exception ex){}
+
         String finalTarget = target;
+
         Optional<Component> tabToSelect = menu.getChildren().filter(tab -> {
+
             Component child = tab.getChildren().findFirst().get();
+
             return child instanceof RouterLink && ((RouterLink) child).getHref().equals(finalTarget);
+
         }).findFirst();
+
         tabToSelect.ifPresent(tab -> menu.setSelectedTab((Tab) tab));
     }
 }

@@ -1,6 +1,6 @@
 package com.postnow.views;
 
-import com.postnow.backend.model.Gender;
+import com.postnow.backend.model.GenderEnum;
 import com.postnow.backend.model.User;
 import com.postnow.backend.model.UserAdditionalData;
 import com.postnow.backend.service.UserService;
@@ -64,7 +64,6 @@ public class MainView extends Div implements BeforeEnterObserver {
         setId("main-view");
         VerticalLayout wrapper = createWrapper();
         wrapper.setMaxWidth("1366px");
-//        formLayout.setMaxWidth("1340px");
 
         createLogin(wrapper);
         createTitle(wrapper);
@@ -85,7 +84,7 @@ public class MainView extends Div implements BeforeEnterObserver {
             userDetailsBinder.readBean(null);
 
             birthDateCalendar.setValue(LocalDate.of(1900,1,1));
-            genderList.setValue(Gender.OTHER.toString());
+            genderList.setValue(GenderEnum.OTHER.toString());
 
             Notification success = new Notification();
             success.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
@@ -93,13 +92,14 @@ public class MainView extends Div implements BeforeEnterObserver {
             success.setDuration(2000);
             success.open();
         });
+
         save.addClickListener(e -> {
             User user = new User();
             user.setEmail(email.getValue());
             user.setPassword(password.getValue());
             user.getUserAdditionalData().setFirstName(firstName.getValue());
             user.getUserAdditionalData().setLastName(lastName.getValue());
-            user.getUserAdditionalData().setGender(Gender.valueOf(genderList.getValue()).toString());
+            user.getUserAdditionalData().setGender(GenderEnum.valueOf(genderList.getValue()).toString());
             user.getUserAdditionalData().setBirthDate(birthDateCalendar.getValue().toString());
 
             try {
@@ -186,11 +186,11 @@ public class MainView extends Div implements BeforeEnterObserver {
         addFormItem(wrapper, formLayout, email, "Email");
         addFormItem(wrapper, formLayout, password, "Password");
 
-        genderList.setItems(Gender.MEN.toString(), Gender.WOMEN.toString(), Gender.OTHER.toString());
-        genderList.setValue(Gender.OTHER.toString());
+        genderList.setItems(GenderEnum.MEN.toString(), GenderEnum.WOMEN.toString(), GenderEnum.OTHER.toString());
+        genderList.setValue(GenderEnum.OTHER.toString());
         addFormItem(wrapper, formLayout, genderList, "Gender");
 
-        birthDateCalendar.setValue(LocalDate.of(1900, 1, 1));
+        birthDateCalendar.setValue(LocalDate.of(2000, 1, 1));
         addFormItem(wrapper, formLayout, birthDateCalendar, "Birthdate");
     }
 

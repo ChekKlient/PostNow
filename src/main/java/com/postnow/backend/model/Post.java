@@ -4,14 +4,17 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -36,20 +39,13 @@ public class Post implements Serializable {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "post_id")
-    private List<PostComment> commentList =  new ArrayList<>(); // linkedlist
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private List<PostComment> commentList =  new ArrayList<>();
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER) //todo fix, when user has no posts but gave likes then he can't be removed
-    @JoinTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
-    private Set<User> likesList = new HashSet<>();
-
-    public void iLikeIt(User whoLike){
-        this.likesList.add(whoLike);
-    }
-
-    public void iDontLikeIt(User whoDislike) {
-        this.likesList.remove(whoDislike);
-        likesList.removeIf(s -> s.getId().equals(whoDislike.getId()));
-    }
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private List<PostLike> postLikeList = new ArrayList<>();
 
     public void incrementShares(){
         this.shares++;

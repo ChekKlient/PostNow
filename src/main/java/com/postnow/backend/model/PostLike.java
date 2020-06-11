@@ -4,11 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -16,17 +13,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 
 @Entity
-public class PostComment implements Serializable {
+public class PostLike {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long id;
 
-    @Column(nullable = false, updatable = true)
-    @Length(min = 1, max = 300)
-    private String text;
-
-    private LocalDateTime date;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Post post;
 }
